@@ -199,7 +199,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_path", type=str, default='tencent/Hunyuan3D-2.1')
     parser.add_argument("--subfolder", type=str, default='hunyuan3d-dit-v2-1')
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--limit-model-concurrency", type=int, default=5)
+    parser.add_argument("--limit-model-concurrency", type=int, default=2)
     parser.add_argument('--low_vram_mode', action='store_true')
     parser.add_argument('--cache-path', type=str, default='./gradio_cache')
     args = parser.parse_args()

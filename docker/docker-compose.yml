@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  hunyuan3d-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hunyuan3d21-h100:latest
+    container_name: hunyuan3d-h100
+    restart: unless-stopped
+    
+    # GPU configuration for H100
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    
+    # Environment variables for H100 optimization
+    environment:
+      - CUDA_VISIBLE_DEVICES=0,1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - CUDA_DEVICE_ORDER=PCI_BUS_ID
+      - CUDA_LAUNCH_BLOCKING=0
+      - CUDA_CACHE_DISABLE=0
+      - NCCL_DEBUG=WARN
+      - PYTHONUNBUFFERED=1
+    
+    # Port mapping
+    ports:
+      - "7860:7860"  # Gradio interface
+      - "8081:8081"  # API server
+    
+    # Volume mounts for persistent data
+    volumes:
+      - ./cache:/workspace/Hunyuan3D-2.1/gradio_cache
+      - ./models:/workspace/Hunyuan3D-2.1/models
+      - ./output:/workspace/Hunyuan3D-2.1/output
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    
+    # Shared memory for better performance
+    shm_size: 16gb
+    
+    # Memory limits (adjust based on your system)
+    mem_limit: 64g
+    memswap_limit: 64g
+    
+    # Command override for API server
+    command: ["python", "api_server.py", "--host", "0.0.0.0", "--port", "7860", "--limit-model-concurrency", "2"]
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  # Optional: Gradio interface service
+  hunyuan3d-gradio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hunyuan3d21-h100:latest
+    container_name: hunyuan3d-gradio
+    restart: unless-stopped
+    profiles: ["gradio"]  # Only start with --profile gradio
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    
+    environment:
+      - CUDA_VISIBLE_DEVICES=0,1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - PYTHONUNBUFFERED=1
+    
+    ports:
+      - "7861:7860"  # Different port to avoid conflict
+    
+    volumes:
+      - ./cache:/workspace/Hunyuan3D-2.1/gradio_cache
+      - ./models:/workspace/Hunyuan3D-2.1/models
+      - ./output:/workspace/Hunyuan3D-2.1/output
+    
+    shm_size: 16gb
+    mem_limit: 64g
+    
+    command: ["python", "gradio_app.py", "--host", "0.0.0.0", "--port", "7860"]
+
+volumes:
+  cache:
+    driver: local
+  models:
+    driver: local
+  output:
+    driver: local

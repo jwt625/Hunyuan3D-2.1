@@ -91,19 +91,36 @@ Hunyuan3D 2.1 supports Macos, Windows, Linux. You may follow the next steps to u
 
 ### Install Requirements
 We test our model on an A100 GPU with Python 3.10 and PyTorch 2.5.1+cu124.
+
+**Step 1: Install PyTorch and Dependencies**
 ```bash
 pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
 pip install -r requirements.txt
+```
 
+**Step 2: Install Custom Rasterizer**
+```bash
 cd hy3dpaint/custom_rasterizer
 pip install -e .
 cd ../..
+```
+
+**Step 3: Compile Mesh Inpainting Module (Required for Texture Generation)**
+```bash
 cd hy3dpaint/DifferentiableRenderer
 bash compile_mesh_painter.sh
 cd ../..
+```
 
+**Step 4: Download RealESRGAN Weights**
+```bash
+# Create checkpoint directory if it doesn't exist
+mkdir -p hy3dpaint/ckpt
+# Download RealESRGAN weights for texture upscaling
 wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth -P hy3dpaint/ckpt
 ```
+
+**Note**: Steps 3 and 4 are essential for texture generation. If you skip step 3, you'll get "InPaint Function CAN NOT BE Imported!!!" error. If you skip step 4, you'll get "No such file or directory: RealESRGAN_x4plus.pth" error.
 
 ### Code Usage
 
